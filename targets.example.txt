@@ -1,0 +1,5 @@
+# One site per line. Blank lines and # comments are ignored.
+# Without a scheme, https is tried first and http is the fallback.
+example.com
+https://www.example.org/
+http://localhost:8080/app

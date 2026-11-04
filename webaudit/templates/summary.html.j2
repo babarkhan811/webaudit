@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
+<title>Website audit summary</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1c2128; --muted: #5d6673; --line: #dfe3e8;
+    --critical: #b3261e; --high: #c2570c; --medium: #946200; --low: #2a6db0; --info: #5d6673;
+    --good: #1a7f4b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171b; --panel: #1d2127; --text: #e6e9ee; --muted: #9aa4b1; --line: #313740;
+      --critical: #ff8a80; --high: #ffab66; --medium: #e8c15a; --low: #7db8f0; --info: #9aa4b1;
+      --good: #63d097;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0 auto; padding: 32px 16px 64px; max-width: 1040px;
+    background: var(--bg); color: var(--text);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 26px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 36px 0 12px; }
+  .muted { color: var(--muted); }
+  .notice {
+    border-left: 4px solid var(--high); background: var(--panel);
+    padding: 10px 14px; margin: 16px 0; border-radius: 4px;
+  }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 20px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 26px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.url { white-space: normal; overflow-wrap: anywhere; min-width: 200px; }
+  .grade { font-weight: 700; }
+  .grade-A, .grade-B { color: var(--good); }
+  .grade-C, .grade-D { color: var(--medium); }
+  .grade-F { color: var(--critical); }
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
+  summary { cursor: pointer; padding: 11px 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .body { padding: 2px 14px 14px; }
+  .finding { border-top: 1px solid var(--line); padding: 10px 0; }
+  .finding p { margin: 2px 0; overflow-wrap: anywhere; }
+  .sev { font-size: 12px; font-weight: 700; text-transform: uppercase; margin-right: 6px; }
+  .sev-critical { color: var(--critical); } .sev-high { color: var(--high); }
+  .sev-medium { color: var(--medium); } .sev-low { color: var(--low); } .sev-info { color: var(--info); }
+  ul.evidence { margin: 4px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .checks { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+</style>
+</head>
+<body>
+<h1>Website audit summary</h1>
+<p class="muted">{{ sites_audited }} site{{ '' if sites_audited == 1 else 's' }} audited &middot; {{ started_at }} to {{ finished_at }} &middot; webaudit {{ tool_version }}</p>
+
+{% if interrupted %}
+<div class="notice"><strong>This run was interrupted.</strong> {{ not_run | length }} site{{ '' if not_run | length == 1 else 's' }} did not finish.</div>
+{% endif %}
+{% if rejected_targets %}
+<div class="notice"><strong>{{ rejected_targets | length }} line{{ '' if rejected_targets | length == 1 else 's' }} in the target list could not be used:</strong>
+  <ul class="evidence">{% for line in rejected_targets %}<li>{{ line }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<div class="stats">
+  <div class="stat"><b>{{ average_score if average_score is not none else '-' }}</b><span class="muted">Average score</span></div>
+  <div class="stat"><b class="sev-critical">{{ severity_totals.critical }}</b><span class="muted">Critical</span></div>
+  <div class="stat"><b class="sev-high">{{ severity_totals.high }}</b><span class="muted">High</span></div>
+  <div class="stat"><b class="sev-medium">{{ severity_totals.medium }}</b><span class="muted">Medium</span></div>
+  <div class="stat"><b class="sev-low">{{ severity_totals.low }}</b><span class="muted">Low</span></div>
+</div>
+
+<h2>Sites, lowest score first</h2>
+<div class="scroll">
+<table>
+  <thead><tr>
+    <th>Grade</th><th class="num">Score</th><th>Site</th><th>Status</th>
+    <th class="num">Crit</th><th class="num">High</th><th class="num">Med</th><th class="num">Low</th>
+    <th class="num">Time</th><th>JSON</th>
+  </tr></thead>
+  <tbody>
+  {% for site in sites %}
+    <tr>
+      <td class="grade grade-{{ site.grade }}">{{ site.grade }}</td>
+      <td class="num">{{ site.score if site.score is not none else '-' }}</td>
+      <td class="url">{{ site.url }}</td>
+      <td>{{ site.status }}</td>
+      <td class="num">{{ site.severity_counts.critical | default(0) }}</td>
+      <td class="num">{{ site.severity_counts.high | default(0) }}</td>
+      <td class="num">{{ site.severity_counts.medium | default(0) }}</td>
+      <td class="num">{{ site.severity_counts.low | default(0) }}</td>
+      <td class="num">{{ '%.1f' | format(site.duration_s) }}s</td>
+      <td>{% if site.report_file %}<a href="{{ site.report_file }}">report</a>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<h2>Findings by site</h2>
+{% for site in sites %}
+<details{% if loop.first %} open{% endif %}>
+  <summary>{{ site.url }} &middot; {{ site.findings | length }} finding{{ '' if site.findings | length == 1 else 's' }}</summary>
+  <div class="body">
+    {% if site.final_url and site.final_url != site.url %}<p class="checks">Final URL: {{ site.final_url }}</p>{% endif %}
+    {% if site.error %}<p class="checks">Error: {{ site.error }}</p>{% endif %}
+    <p class="checks">
+      {% for name, check in site.checks.items() %}{{ name }}: {{ check.status }}{% if check.error %} ({{ check.error }}){% endif %}{% if not loop.last %} &middot; {% endif %}{% endfor %}
+    </p>
+    {% for finding in site.findings %}
+    <div class="finding">
+      <p><span class="sev sev-{{ finding.severity }}">{{ finding.severity }}</span><strong>{{ finding.title }}</strong> <span class="muted">({{ finding.check }})</span></p>
+      {% if finding.detail %}<p>{{ finding.detail }}</p>{% endif %}
+      {% if finding.recommendation %}<p class="muted">{{ finding.recommendation }}</p>{% endif %}
+      {% if finding.evidence %}<ul class="evidence">{% for item in finding.evidence %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+    {% else %}
+    <p class="muted">No findings.</p>
+    {% endfor %}
+  </div>
+</details>
+{% endfor %}
+</body>
+</html>
