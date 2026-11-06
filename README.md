@@ -18,7 +18,27 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-## Usage
+## Dashboard (GUI)
+
+Prefer a graphical interface? Launch the local web dashboard:
+
+```powershell
+webaudit gui
+```
+
+It starts a small server on `http://127.0.0.1:8765`, opens your browser, and gives you
+target entry, check selection, options, live progress, a results table with expandable
+findings, links to the HTML reports, and a history of past scans. Keep the terminal
+window open while you use it; press Ctrl+C to stop.
+
+Options: `--port 9000`, `--host 127.0.0.1`, `-o reports`, `--no-browser`.
+
+The dashboard is for local use only. It binds to `127.0.0.1`, requires a one-time token
+(handed out in the URL it opens) on every API call, and rejects non-local hosts — so
+other sites open in your browser, and other machines, can't drive it. Don't bind it to a
+public address: anyone who could reach it could make the tool scan arbitrary hosts.
+
+## Usage (command line)
 
 ```powershell
 # Audit a list, 3 sites at a time
@@ -96,7 +116,12 @@ context.py    Per-site state: throttled HTTP, private-network guard, cached home
 checks/       One module per check, registered with a decorator
 reporting.py  JSON and HTML output
 cli.py        Arguments, progress display, exit codes
+web/          The dashboard: Starlette app (app.py), scan runner (runner.py),
+              browser launcher (server.py), and the single-page UI under static/
 ```
+
+The dashboard reuses the exact same engine, checks and reporting as the CLI — it only
+adds a thin async layer that streams progress to the browser and serves the reports.
 
 **Concurrency.** The queue is filled before the workers start, and `--concurrency`
 workers drain it, so a worker can never block waiting for more work. Within a site, all

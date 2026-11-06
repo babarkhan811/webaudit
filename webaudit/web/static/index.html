@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>webaudit dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">webaudit<span class="ver" id="version"></span></div>
+  <nav class="tabs">
+    <button class="tab active" data-view="scan">Scan</button>
+    <button class="tab" data-view="history">History</button>
+  </nav>
+</header>
+
+<main>
+  <!-- SCAN VIEW -->
+  <section id="view-scan">
+    <div class="grid">
+      <form id="scan-form" class="panel">
+        <h2>New scan</h2>
+
+        <label class="field">
+          <span>Targets <small>one per line — a domain or full URL</small></span>
+          <textarea id="targets" rows="5" placeholder="example.com&#10;https://mysite.com/"></textarea>
+        </label>
+
+        <fieldset class="field">
+          <legend>Checks</legend>
+          <div id="checks" class="checks"></div>
+          <p id="exposure-note" class="note warn" hidden>
+            The <b>exposure</b> check requests paths like <code>/.env</code> and
+            <code>/.git/</code>. It shows up in server logs — only run it on sites you
+            own or are authorized to test.
+          </p>
+        </fieldset>
+
+        <div class="opts">
+          <label>Concurrency
+            <input type="number" id="concurrency" value="3" min="1" max="50">
+          </label>
+          <label>Timeout (s)
+            <input type="number" id="timeout" value="10" min="1" max="120">
+          </label>
+        </div>
+
+        <details class="advanced">
+          <summary>Advanced options</summary>
+          <div class="opts">
+            <label>Site timeout (s)<input type="number" id="site_timeout" value="180" min="5" max="1800"></label>
+            <label>Requests / site<input type="number" id="per_site_requests" value="5" min="1" max="20"></label>
+            <label>Delay / request (s)<input type="number" id="delay" value="0" min="0" max="10" step="0.1"></label>
+            <label>Max pages<input type="number" id="max_pages" value="5" min="1" max="50"></label>
+            <label>Max links<input type="number" id="max_links" value="100" min="1" max="1000"></label>
+          </div>
+        </details>
+
+        <div class="actions">
+          <button type="submit" id="run-btn" class="primary">Run scan</button>
+          <button type="button" id="cancel-btn" class="danger" hidden>Stop</button>
+        </div>
+        <p id="form-error" class="note error" hidden></p>
+      </form>
+
+      <div class="panel results-panel">
+        <div class="results-head">
+          <h2 id="results-title">Results</h2>
+          <a id="open-report" class="report-link" hidden target="_blank" rel="noopener">Open full HTML report ↗</a>
+        </div>
+
+        <div id="progress-wrap" hidden>
+          <div class="progress"><div id="progress-bar"></div></div>
+          <div id="progress-text" class="muted"></div>
+        </div>
+
+        <div id="summary-bar" class="summary-bar" hidden></div>
+        <div id="rejected" class="note warn" hidden></div>
+
+        <div id="empty" class="empty">Enter targets and run a scan to see results here.</div>
+        <div id="results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORY VIEW -->
+  <section id="view-history" hidden>
+    <div class="panel">
+      <div class="results-head">
+        <h2>Past scans</h2>
+        <button type="button" id="refresh-history" class="ghost">Refresh</button>
+      </div>
+      <div id="history-list"></div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot muted">
+  Runs locally on your machine · only scan sites you own or are authorized to test.
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

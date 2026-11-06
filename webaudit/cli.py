@@ -82,6 +82,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     commands.add_parser("list-checks", help="show the available checks")
 
+    gui = commands.add_parser("gui", help="launch the web dashboard in your browser")
+    gui.add_argument("-o", "--output", type=Path, default=Path("reports"), help="report folder (default: reports)")
+    gui.add_argument("--host", default="127.0.0.1", help="bind address (default: 127.0.0.1, local only)")
+    gui.add_argument("--port", type=int, default=8765, help="port (default: 8765)")
+    gui.add_argument("--no-browser", action="store_true", help="don't open a browser window")
+
     scan = commands.add_parser("scan", help="audit a list of websites")
     scan.add_argument("targets_file", nargs="?", type=Path, help="text file, one site per line")
     scan.add_argument("-u", "--url", action="append", default=[], help="add one site (repeatable)")
@@ -284,4 +290,17 @@ def main(argv: list[str] | None = None) -> int:
     console = Console()
     if args.command == "list-checks":
         return _list_checks(console)
+    if args.command == "gui":
+        from webaudit.web.server import run_gui
+
+        try:
+            run_gui(
+                reports_root=args.output,
+                host=args.host,
+                port=args.port,
+                open_browser=not args.no_browser,
+            )
+        except KeyboardInterrupt:
+            console.print("\nDashboard stopped.")
+        return EXIT_OK
     return _run_scan(args, console)
